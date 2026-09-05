@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+```
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Orders | Ozone Amanzi</title>
+
+<style>
+
+    *{
+        margin:0;
+        padding:0;
+        box-sizing:border-box;
+        font-family:'Segoe UI',sans-serif;
+    }
+
+    body{
+        min-height:100vh;
+        color:white;
+        padding:30px;
+
+        background:
+        linear-gradient(
+            rgba(2,6,23,0.9),
+            rgba(15,23,42,0.9)
+        ),
+        url('https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=1920&q=80');
+
+        background-size:cover;
+        background-position:center;
+        background-attachment:fixed;
+    }
+
+    .header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:30px;
+    }
+
+    .header h1{
+        color:#38bdf8;
+    }
+
+    .back-btn{
+        text-decoration:none;
+        color:white;
+        background:#2563eb;
+        padding:12px 20px;
+        border-radius:10px;
+        transition:.3s;
+    }
+
+    .back-btn:hover{
+        background:#1d4ed8;
+    }
+
+    .stats{
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+        gap:20px;
+        margin-bottom:25px;
+    }
+
+    .stat-card{
+        background:rgba(30,41,59,0.8);
+        backdrop-filter:blur(12px);
+        padding:25px;
+        border-radius:18px;
+        border:1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat-card h3{
+        color:#94a3b8;
+        margin-bottom:10px;
+    }
+
+    .stat-card h1{
+        color:#38bdf8;
+    }
+
+    .table-container{
+        background:rgba(30,41,59,0.8);
+        backdrop-filter:blur(12px);
+        border-radius:20px;
+        overflow:auto;
+        border:1px solid rgba(255,255,255,0.1);
+    }
+
+    table{
+        width:100%;
+        border-collapse:collapse;
+        min-width:1000px;
+    }
+
+    th{
+        background:rgba(255,255,255,0.05);
+        color:#94a3b8;
+        text-transform:uppercase;
+        font-size:13px;
+    }
+
+    th,td{
+        padding:16px;
+        text-align:left;
+        vertical-align:top;
+    }
+
+    tr{
+        border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+
+    tr:hover{
+        background:rgba(255,255,255,0.03);
+    }
+
+    .status{
+        padding:8px 15px;
+        border-radius:30px;
+        font-size:12px;
+        font-weight:bold;
+        display:inline-block;
+    }
+
+    .pending{
+        background:#f59e0b;
+        color:black;
+    }
+
+    .verified{
+        background:#38bdf8;
+        color:black;
+    }
+
+    .delivered{
+        background:#22c55e;
+        color:white;
+    }
+
+    button{
+        border:none;
+        padding:10px 14px;
+        border-radius:10px;
+        cursor:pointer;
+        margin-right:5px;
+        margin-bottom:5px;
+        transition:.3s;
+        font-weight:600;
+    }
+
+    button:hover{
+        transform:translateY(-2px);
+    }
+
+    .verify{
+        background:#38bdf8;
+    }
+
+    .deliver{
+        background:#22c55e;
+    }
+
+    .delete{
+        background:#ef4444;
+        color:white;
+    }
+
+    .footer{
+        margin-top:25px;
+        text-align:center;
+        color:#94a3b8;
+    }
+
+    .loading{
+        text-align:center;
+        padding:30px;
+        color:#94a3b8;
+    }
+
+    .error{
+        text-align:center;
+        padding:30px;
+        color:#f87171;
+    }
+
+    .empty{
+        text-align:center;
+        padding:30px;
+        color:#94a3b8;
+    }
+
+</style>
+```
+
+</head>
+
+<body>
+
+```
+<div class="header">
+
+    <div>
+
+        <h1>Orders Management</h1>
+
+        <p style="color:#94a3b8">
+            Manage customer orders, deliveries and payments.
+        </p>
+
+    </div>
+
+    <a href="admin-dashboard.html" class="back-btn">
+        ← Dashboard
+    </a>
+
+</div>
+
+
+<!-- STATISTICS -->
+
+<div class="stats">
+
+    <div class="stat-card">
+
+        <h3>Total Orders</h3>
+
+        <h1 id="totalOrders">0</h1>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <h3>Pending</h3>
+
+        <h1 id="pendingOrders">0</h1>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <h3>Delivered</h3>
+
+        <h1 id="deliveredOrders">0</h1>
+
+    </div>
+
+</div>
+
+
+<!-- ORDERS TABLE -->
+
+<div class="table-container">
+
+    <table>
+
+        <thead>
+
+            <tr>
+
+                <th>Order ID</th>
+
+                <th>Customer</th>
+
+                <th>Products</th>
+
+                <th>Total</th>
+
+                <th>Payment</th>
+
+                <th>Status</th>
+
+                <th>Date</th>
+
+                <th>Actions</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody id="ordersTable">
+
+            <tr>
+
+                <td colspan="8" class="loading">
+
+                    Loading orders from Firebase...
+
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<div class="footer">
+
+    © 2026 Ozone Amanzi | Orders Management System
+
+</div>
+```
+
+<script>
+
+/* =========================================================
+   FIREBASE CONFIGURATION
+   ========================================================= */
+
+const firebaseConfig = {
+
+    apiKey: "AIzaSyB941JrVMoffS9PitRJK2ha-uM2_Sj7nUU",
+
+    authDomain: "ozonewater-a9a7b.firebaseapp.com",
+
+    databaseURL:
+        "https://ozonewater-a9a7b-default-rtdb.firebaseio.com",
+
+    projectId: "ozonewater-a9a7b",
+
+    storageBucket:
+        "ozonewater-a9a7b.firebasestorage.app",
+
+    messagingSenderId: "971028673535",
+
+    appId:
+        "1:971028673535:web:22c0da399ede6b0550adca",
+
+    measurementId: "G-HV7F0LJ0ST"
+
+};
+
+
+/* =========================================================
+   INITIALIZE FIREBASE
+   ========================================================= */
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+
+const auth = firebase.auth();
+
+
+/* =========================================================
+   STORE ORDERS
+   ========================================================= */
+
+let orders = [];
+
+
+/* =========================================================
+   CHECK ADMIN LOGIN
+   ========================================================= */
+
+auth.onAuthStateChanged(function(user){
+
+    console.log("Authentication state changed.");
+
+    if(!user){
+
+        console.log("❌ No user logged in.");
+
+        sessionStorage.setItem(
+            "returnAfterLogin",
+            "admin-orders.html"
+        );
+
+        alert(
+            "You must be logged in to access Orders Management."
+        );
+
+        window.location.href = "login.html";
+
+        return;
+
+    }
+
+
+    console.log(
+        "✅ Logged-in Firebase UID:",
+        user.uid
+    );
+
+    console.log(
+        "📧 Logged-in email:",
+        user.email
+    );
+
+
+    /*
+        User is logged in.
+        Now load the orders.
+    */
+
+    loadOrders();
+
+});
+
+
+/* =========================================================
+   LOAD ORDERS FROM FIREBASE
+   ========================================================= */
+
+function loadOrders(){
+
+    console.log("🔄 Loading orders from Firebase...");
+
+
+    const ordersRef =
+        database.ref("orders");
+
+
+    ordersRef.on(
+
+        "value",
+
+        function(snapshot){
+
+            console.log(
+                "🔥 Firebase snapshot received."
+            );
+
+
+            const data = snapshot.val();
+
+
+            console.log(
+                "📦 Raw orders:",
+                data
+            );
+
+
+            orders = [];
+
+
+            /*
+                No orders
+            */
+
+            if(!data){
+
+                console.log(
+                    "ℹ️ No orders found."
+                );
+
+                renderOrders();
+
+                return;
+
+            }
+
+
+            /*
+                Firebase structure:
+
+                orders
+                    └── userUID
+                        └── orderNumber
+                            ├── customer
+                            ├── items
+                            ├── total
+                            ├── payment
+                            ├── status
+                            └── createdAt
+            */
+
+
+            Object.keys(data).forEach(function(uid){
+
+                const userOrders = data[uid];
+
+
+                if(
+                    !userOrders ||
+                    typeof userOrders !== "object"
+                ){
+
+                    return;
+
+                }
+
+
+                Object.keys(userOrders).forEach(
+                    function(orderNumber){
+
+                        const order =
+                            userOrders[orderNumber];
+
+
+                        if(
+                            !order ||
+                            typeof order !== "object"
+                        ){
+
+                            return;
+
+                        }
+
+
+                        /*
+                            Add Firebase information
+                            to the order.
+                        */
+
+                        orders.push({
+
+                            ...order,
+
+                            uid: uid,
+
+                            firebaseOrderNumber:
+                                orderNumber
+
+                        });
+
+                    }
+                );
+
+            });
+
+
+            console.log(
+                "✅ Processed orders:",
+                orders
+            );
+
+
+            renderOrders();
+
+        },
+
+        function(error){
+
+            console.error(
+                "❌ Firebase orders error:",
+                error
+            );
+
+
+            document.getElementById(
+                "ordersTable"
+            ).innerHTML = `
+
+                <tr>
+
+                    <td colspan="8" class="error">
+
+                        <strong>
+                            Unable to load orders.
+                        </strong>
+
+                        <br><br>
+
+                        ${escapeHTML(error.message)}
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+
+    );
+
+}
+
+
+/* =========================================================
+   DISPLAY ORDERS
+   ========================================================= */
+
+function renderOrders(){
+
+    const table =
+        document.getElementById("ordersTable");
+
+
+    table.innerHTML = "";
+
+
+    let pendingCount = 0;
+
+    let deliveredCount = 0;
+
+
+    /*
+        No orders
+    */
+
+    if(orders.length === 0){
+
+        table.innerHTML = `
+
+            <tr>
+
+                <td colspan="8" class="empty">
+
+                    No orders found.
+
+                </td>
+
+            </tr>
+
+        `;
+
+
+        updateStatistics();
+
+        return;
+
+    }
+
+
+    /*
+        Sort newest orders first.
+    */
+
+    orders.sort(function(a,b){
+
+        return new Date(
+            b.createdAt || 0
+        ) -
+        new Date(
+            a.createdAt || 0
+        );
+
+    });
+
+
+    /*
+        Create every order row.
+    */
+
+    orders.forEach(function(order){
+
+        try{
+
+            /* =================================================
+               STATUS
+               ================================================= */
+
+            const status =
+                order.status || "Pending";
+
+
+            let statusClass =
+                "pending";
+
+
+            if(status === "Verified"){
+
+                statusClass =
+                    "verified";
+
+            }
+
+
+            if(status === "Delivered"){
+
+                statusClass =
+                    "delivered";
+
+            }
+
+
+            if(status === "Pending"){
+
+                pendingCount++;
+
+            }
+
+
+            if(status === "Delivered"){
+
+                deliveredCount++;
+
+            }
+
+
+            /* =================================================
+               CUSTOMER
+               ================================================= */
+
+            const customer =
+                order.customer || {};
+
+
+            const firstName =
+                customer.firstName || "";
+
+
+            const lastName =
+                customer.lastName || "";
+
+
+            const customerName =
+                `${firstName} ${lastName}`.trim()
+                || "Unknown Customer";
+
+
+            const customerEmail =
+                customer.email || "No email";
+
+
+            const customerPhone =
+                customer.phone || "No phone";
+
+
+            /* =================================================
+               PRODUCTS
+               ================================================= */
+
+            let productsHTML =
+                "No products";
+
+
+            if(
+                Array.isArray(order.items) &&
+                order.items.length > 0
+            ){
+
+                productsHTML = "";
+
+
+                order.items.forEach(function(item){
+
+                    const itemName =
+                        item.name || "Product";
+
+
+                    const quantity =
+                        Number(item.quantity || 1);
+
+
+                    productsHTML += `
+
+                        <div style="margin-bottom:6px;">
+
+                            ${escapeHTML(itemName)}
+
+                            <strong>
+                                × ${quantity}
+                            </strong>
+
+                        </div>
+
+                    `;
+
+                });
+
+            }
+
+
+            /* =================================================
+               TOTAL
+               ================================================= */
+
+            const total =
+                Number(order.total || 0)
+                .toFixed(2);
+
+
+            /* =================================================
+               PAYMENT
+               ================================================= */
+
+            const payment =
+                order.payment || "Not specified";
+
+
+            /* =================================================
+               DATE
+               ================================================= */
+
+            let date =
+                "Unknown";
+
+
+            if(order.createdAt){
+
+                const dateObject =
+                    new Date(order.createdAt);
+
+
+                if(!isNaN(dateObject.getTime())){
+
+                    date =
+                        dateObject.toLocaleString();
+
+                }
+
+            }
+
+
+            /* =================================================
+               ORDER NUMBER
+               ================================================= */
+
+            const orderNumber =
+                order.orderNumber ||
+                order.firebaseOrderNumber ||
+                "N/A";
+
+
+            /* =================================================
+               ADD ROW
+               ================================================= */
+
+            table.innerHTML += `
+
+                <tr>
+
+                    <td>
+
+                        <strong>
+
+                            ${escapeHTML(orderNumber)}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+
+                            ${escapeHTML(customerName)}
+
+                        </strong>
+
+                        <br>
+
+                        <small style="color:#94a3b8">
+
+                            ${escapeHTML(customerEmail)}
+
+                            <br>
+
+                            ${escapeHTML(customerPhone)}
+
+                        </small>
+
+                    </td>
+
+
+                    <td>
+
+                        ${productsHTML}
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+
+                            R${total}
+
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(payment)}
+
+                    </td>
+
+
+                    <td>
+
+                        <span
+                            class="status ${statusClass}"
+                        >
+
+                            ${escapeHTML(status)}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(date)}
+
+                    </td>
+
+
+                    <td>
+
+                        <button
+                            class="verify"
+                            onclick="changeStatus(
+                                '${escapeJS(order.uid)}',
+                                '${escapeJS(order.firebaseOrderNumber)}',
+                                'Verified'
+                            )"
+                        >
+
+                            Verify
+
+                        </button>
+
+
+                        <button
+                            class="deliver"
+                            onclick="changeStatus(
+                                '${escapeJS(order.uid)}',
+                                '${escapeJS(order.firebaseOrderNumber)}',
+                                'Delivered'
+                            )"
+                        >
+
+                            Deliver
+
+                        </button>
+
+
+                        <button
+                            class="delete"
+                            onclick="deleteOrder(
+                                '${escapeJS(order.uid)}',
+                                '${escapeJS(order.firebaseOrderNumber)}'
+                            )"
+                        >
+
+                            Delete
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }
+
+        catch(error){
+
+            console.error(
+                "❌ Error displaying order:",
+                order,
+                error
+            );
+
+        }
+
+    });
+
+
+    /*
+        UPDATE STATISTICS
+    */
+
+    document.getElementById(
+        "totalOrders"
+    ).innerText =
+        orders.length;
+
+
+    document.getElementById(
+        "pendingOrders"
+    ).innerText =
+        pendingCount;
+
+
+    document.getElementById(
+        "deliveredOrders"
+    ).innerText =
+        deliveredCount;
+
+}
+
+
+/* =========================================================
+   UPDATE STATISTICS
+   ========================================================= */
+
+function updateStatistics(){
+
+    let pending = 0;
+
+    let delivered = 0;
+
+
+    orders.forEach(function(order){
+
+        const status =
+            order.status || "Pending";
+
+
+        if(status === "Pending"){
+
+            pending++;
+
+        }
+
+
+        if(status === "Delivered"){
+
+            delivered++;
+
+        }
+
+    });
+
+
+    document.getElementById(
+        "totalOrders"
+    ).innerText =
+        orders.length;
+
+
+    document.getElementById(
+        "pendingOrders"
+    ).innerText =
+        pending;
+
+
+    document.getElementById(
+        "deliveredOrders"
+    ).innerText =
+        delivered;
+
+}
+
+
+/* =========================================================
+   CHANGE ORDER STATUS
+   ========================================================= */
+
+function changeStatus(
+    uid,
+    orderNumber,
+    newStatus
+){
+
+    console.log(
+        "🔄 Changing order status:",
+        orderNumber,
+        newStatus
+    );
+
+
+    if(!uid || !orderNumber){
+
+        alert(
+            "Order information is missing."
+        );
+
+        return;
+
+    }
+
+
+    const orderRef =
+        database.ref(
+            "orders/" +
+            uid +
+            "/" +
+            orderNumber
+        );
+
+
+    orderRef.update({
+
+        status: newStatus
+
+    })
+
+    .then(function(){
+
+        console.log(
+            "✅ Order updated:",
+            orderNumber,
+            newStatus
+        );
+
+    })
+
+    .catch(function(error){
+
+        console.error(
+            "❌ Status update failed:",
+            error
+        );
+
+
+        alert(
+            "Could not update order:\n\n" +
+            error.message
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   DELETE ORDER
+   ========================================================= */
+
+function deleteOrder(
+    uid,
+    orderNumber
+){
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete order " +
+            orderNumber +
+            "?"
+        );
+
+
+    if(!confirmed){
+
+        return;
+
+    }
+
+
+    const orderRef =
+        database.ref(
+            "orders/" +
+            uid +
+            "/" +
+            orderNumber
+        );
+
+
+    orderRef.remove()
+
+    .then(function(){
+
+        console.log(
+            "✅ Order deleted:",
+            orderNumber
+        );
+
+    })
+
+    .catch(function(error){
+
+        console.error(
+            "❌ Delete failed:",
+            error
+        );
+
+
+        alert(
+            "Could not delete order:\n\n" +
+            error.message
+        );
+
+    });
+
+}
+
+
+/* =========================================================
+   SECURITY / DISPLAY HELPERS
+   ========================================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+function escapeJS(value){
+
+    return String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+
+}
+
+</script>
+
+</body>
+
+</html>

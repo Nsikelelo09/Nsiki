@@ -1,0 +1,222 @@
+// ===== PROCESS CARD PAYMENT =====
+function processCardPayment(e) {
+    e.preventDefault();
+
+    // Get form elements
+    const cardNumberInput = document.getElementById('cardNumber');
+    const expiryInput = document.getElementById('expiry');
+    const cvvInput = document.getElementById('cvv');
+    const cardholderInput = document.getElementById('cardholder');
+    const payBtn = document.getElementById('payBtn');
+
+    const cardNumber = cardNumberInput.value.replace(/\s/g, '');
+    const expiry = expiryInput.value;
+    const cvv = cvvInput.value;
+    const cardholder = cardholderInput.value.trim();
+
+    let isValid = true;
+
+    // ===== 1. Validate Card Number =====
+    const cardError = document.getElementById('cardError');
+    if (cardNumber.length < 16 || !/^\d{16}$/.test(cardNumber)) {
+        cardError.textContent = 'Please enter a valid 16-digit card number.';
+        cardError.classList.add('show');
+        isValid = false;
+    } else {
+        cardError.classList.remove('show');
+    }
+
+    // ===== 2. Validate Expiry =====
+    const expiryError = document.getElementById('expiryError');
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+        expiryError.textContent = 'Please enter expiry in MM/YY format.';
+        expiryError.classList.add('show');
+        isValid = false;
+    } else {
+        const [month, year] = expiry.split('/');
+        const now = new Date();
+        const expYear = 2000 + parseInt(year);
+        const expMonth = parseInt(month) - 1;
+        const expDate = new Date(expYear, expMonth, 1);
+
+        // Check if card is expired (allow current month)
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+        if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+            expiryError.textContent = 'This card has expired. Please use a valid card.';
+            expiryError.classList.add('show');
+            isValid = false;
+        } else {
+            expiryError.classList.remove('show');
+        }
+    }
+
+    // ===== 3. Validate CVV =====
+    const cvvError = document.getElementById('cvvError');
+    if (cvv.length < 3 || cvv.length > 4 || !/^\d+$/.test(cvv)) {
+        cvvError.textContent = 'CVV must be 3-4 digits.';
+        cvvError.classList.add('show');
+        isValid = false;
+    } else {
+        cvvError.classList.remove('show');
+    }
+
+    // ===== 4. Validate Cardholder Name =====
+    const nameError = document.getElementById('nameError');
+    if (cardholder.length < 2 || !/^[a-zA-Z\s\-']+$/.test(cardholder)) {
+        nameError.textContent = 'Please enter a valid cardholder name.';
+        nameError.classList.add('show');
+        isValid = false;
+    } else {
+        nameError.classList.remove('show');
+    }
+
+    // ===== 5. Stop if invalid =====
+    if (!isValid) {
+        // Scroll to first error
+        const firstError = document.querySelector('.error-message.show');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+
+    // ===== 6. Get current user =====
+    let currentUser = null;
+    try {
+        const userData = localStorage.getItem('currentUser');
+        if (userData) {
+            currentUser = JSON.parse(userData);
+        }
+    } catch (e) {
+        console.warn('Could not parse user data:', e);
+    }
+
+    // If no user logged in, redirect to login
+    if (!currentUser || !currentUser.name) {
+        showToast('⚠️ Please log in to complete your payment.', false);
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 1500);
+        return;
+    }
+
+    // ===== 7. Generate Order ID =====
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    const orderId = 'OZ-' + timestamp + random;
+
+    // ===== 8. Detect card type =====
+    let cardType = 'Unknown';
+    if (/^4/.test(cardNumber)) cardType = 'Visa';
+    else if (/^5[1-5]/.test(cardNumber)) cardType = 'Mastercard';
+    else if (/^3[47]/.test(cardNumber)) cardType = 'Amex';
+    else if (/^6/.test(cardNumber)) cardType = 'Discover';
+
+    // ===== 9. Prepare payment data =====
+    const paymentData = {
+        orderId: orderId,
+        customerName: currentUser.name || 'Unknown',
+        customerEmail: currentUser.email || 'N/A',
+        customerPhone: currentUser.phone || 'N/A',
+        paymentMethod: 'card',
+        cardLastFour: cardNumber.slice(-4),
+        cardType: cardType,
+        cardholderName: cardholder,
+        amount: 'R 150.00',
+        status: 'completed',
+        deliveryStatus: 'pending',  // <-- Added for order tracking
+        date: new Date().toISOString(),
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    // ===== 10. Show processing state =====
+    payBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    payBtn.disabled = true;
+    payBtn.style.opacity = '0.7';
+
+    // ===== 11. Save to Firebase =====
+    const paymentsRef = firebase.database().ref('payments');
+    const newPaymentRef = paymentsRef.push();
+
+    newPaymentRef.set(paymentData)
+        .then(() => {
+            console.log('✅ Card payment saved to Firebase:', orderId);
+
+            // Save to localStorage for confirmation page
+            localStorage.setItem('orderId', orderId);
+            localStorage.setItem('paymentStatus', 'success');
+            localStorage.setItem('paymentAmount', 'R 150.00');
+            localStorage.setItem('cardLastFour', cardNumber.slice(-4));
+            localStorage.setItem('cardholderName', cardholder);
+            localStorage.setItem('paymentMethod', 'card');
+
+            // Redirect to confirmation
+            setTimeout(() => {
+                window.location.href = 'cash-confirmation.html';
+            }, 600);
+        })
+        .catch((error) => {
+            console.error('❌ Error saving payment:', error);
+
+            // Show error message
+            showToast('❌ There was an error processing your payment. Please try again.', false);
+
+            // Reset button
+            payBtn.innerHTML = '<i class="fas fa-lock" style="margin-right:8px;"></i> Pay Now';
+            payBtn.disabled = false;
+            payBtn.style.opacity = '1';
+
+            // Log error details for debugging
+            if (error.code) {
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+            }
+        });
+}
+
+// ===== TOAST HELPER FUNCTION =====
+function showToast(message, isSuccess = false) {
+    // Check if toast element exists, if not create it
+    let toast = document.getElementById('toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: ${isSuccess ? '#00c853' : '#ff6b6b'};
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+            z-index: 999;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            max-width: 90%;
+            text-align: center;
+        `;
+        document.body.appendChild(toast);
+    }
+
+    toast.textContent = message;
+    toast.style.background = isSuccess ? '#00c853' : '#ff6b6b';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    toast.style.opacity = '1';
+
+    // Clear any existing timeout
+    if (window.toastTimeout) {
+        clearTimeout(window.toastTimeout);
+    }
+
+    // Auto-hide after 4 seconds
+    window.toastTimeout = setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+        toast.style.opacity = '0';
+    }, 4000);
+}

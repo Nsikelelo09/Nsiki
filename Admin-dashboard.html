@@ -1,0 +1,1063 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+    <!-- Your Firebase configuration -->
+    <script src="firebase.js"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ozone Amanzi Admin Dashboard</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:'Segoe UI',sans-serif;
+        }
+
+        body{
+            color:white;
+            min-height:100vh;
+
+            background:
+            linear-gradient(
+                rgba(2,6,23,0.88),
+                rgba(15,23,42,0.88)
+            ),
+            url('https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=1920&q=80');
+
+            background-size:cover;
+            background-position:center;
+            background-attachment:fixed;
+        }
+
+        /* ================= SIDEBAR ================= */
+
+        .sidebar{
+            position:fixed;
+            left:0;
+            top:0;
+            width:260px;
+            height:100vh;
+
+            background:rgba(15,23,42,0.96);
+            backdrop-filter:blur(15px);
+
+            border-right:1px solid rgba(255,255,255,0.1);
+
+            padding:25px;
+
+            z-index:100;
+        }
+
+        .sidebar h2{
+            color:#38bdf8;
+            margin-bottom:40px;
+            font-size:28px;
+        }
+
+        .sidebar a{
+            display:flex;
+            align-items:center;
+            gap:10px;
+
+            color:#cbd5e1;
+            text-decoration:none;
+
+            padding:14px;
+            margin-bottom:10px;
+
+            border-radius:12px;
+
+            transition:0.3s;
+        }
+
+        .sidebar a:hover{
+            background:#38bdf8;
+            color:white;
+            transform:translateX(5px);
+        }
+
+        .sidebar a.active{
+            background:rgba(56,189,248,0.18);
+            color:#38bdf8;
+            border:1px solid rgba(56,189,248,0.25);
+        }
+
+        .logout{
+            margin-top:30px;
+            color:#f87171 !important;
+        }
+
+        /* ================= MAIN ================= */
+
+        .main{
+            margin-left:260px;
+            padding:30px;
+        }
+
+        /* ================= HEADER ================= */
+
+        .topbar{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+
+            margin-bottom:30px;
+        }
+
+        .topbar h1{
+            font-size:32px;
+        }
+
+        .welcome{
+            color:#94a3b8;
+            margin-top:5px;
+        }
+
+        .admin-box{
+            display:flex;
+            align-items:center;
+            gap:15px;
+        }
+
+        .avatar{
+            width:50px;
+            height:50px;
+
+            border-radius:50%;
+
+            background:#38bdf8;
+
+            display:flex;
+            align-items:center;
+            justify-content:center;
+
+            font-size:22px;
+        }
+
+        /* ================= CARDS ================= */
+
+        .cards{
+            display:grid;
+
+            grid-template-columns:
+            repeat(auto-fit,minmax(220px,1fr));
+
+            gap:25px;
+        }
+
+        .card{
+            background:rgba(30,41,59,0.75);
+
+            backdrop-filter:blur(10px);
+
+            border:1px solid rgba(255,255,255,0.1);
+
+            border-radius:20px;
+
+            padding:25px;
+
+            transition:0.3s;
+
+            box-shadow:
+            0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .card:hover{
+            transform:translateY(-6px);
+
+            box-shadow:
+            0 15px 40px rgba(56,189,248,0.2);
+        }
+
+        .card h3{
+            color:#94a3b8;
+            margin-bottom:10px;
+        }
+
+        .card h1{
+            color:#38bdf8;
+            font-size:40px;
+        }
+
+        /* ================= ORDERS ================= */
+
+        .orders{
+            margin-top:35px;
+
+            background:rgba(30,41,59,0.75);
+
+            backdrop-filter:blur(10px);
+
+            border-radius:20px;
+
+            padding:25px;
+
+            border:1px solid rgba(255,255,255,0.1);
+
+            box-shadow:
+            0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .orders h2{
+            margin-bottom:20px;
+        }
+
+        .table-container{
+            overflow-x:auto;
+        }
+
+        table{
+            width:100%;
+            border-collapse:collapse;
+            min-width:600px;
+        }
+
+        th{
+            color:#94a3b8;
+
+            text-transform:uppercase;
+
+            font-size:13px;
+
+            padding:15px;
+
+            text-align:left;
+        }
+
+        td{
+            padding:15px;
+        }
+
+        tr{
+            border-bottom:
+            1px solid rgba(255,255,255,0.08);
+        }
+
+        tr:hover{
+            background:
+            rgba(255,255,255,0.03);
+        }
+
+        /* ================= STATUS ================= */
+
+        .status{
+            display:inline-block;
+
+            padding:7px 15px;
+
+            border-radius:50px;
+
+            font-size:12px;
+
+            font-weight:600;
+        }
+
+        .pending{
+            background:#f59e0b;
+            color:black;
+        }
+
+        .delivered{
+            background:#22c55e;
+            color:white;
+        }
+
+        .processing{
+            background:#38bdf8;
+            color:white;
+        }
+
+        .cancelled{
+            background:#ef4444;
+            color:white;
+        }
+
+        /* ================= LOADING ================= */
+
+        .loading{
+            text-align:center;
+
+            padding:30px;
+
+            color:#94a3b8;
+        }
+
+        .empty{
+            text-align:center;
+
+            padding:30px;
+
+            color:#94a3b8;
+        }
+
+        /* ================= MOBILE ================= */
+
+        @media(max-width:900px){
+
+            .sidebar{
+                width:100%;
+                height:auto;
+                position:relative;
+            }
+
+            .sidebar h2{
+                margin-bottom:20px;
+            }
+
+            .main{
+                margin-left:0;
+                padding:20px;
+            }
+
+            .topbar{
+                align-items:flex-start;
+                gap:20px;
+            }
+
+            .cards{
+                grid-template-columns:1fr;
+            }
+
+        }
+
+        @media(max-width:600px){
+
+            .admin-box{
+                display:none;
+            }
+
+            .topbar h1{
+                font-size:26px;
+            }
+
+            .orders{
+                padding:18px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<!-- ================= SIDEBAR ================= -->
+
+<div class="sidebar">
+
+    <h2>💧 Ozone Admin</h2>
+
+    <a href="admin-dashboard.html" class="active">
+        📊 Dashboard
+    </a>
+
+    <a href="admin-orders.html">
+        📦 Orders
+    </a>
+
+    <a href="admin-payments.html">
+        💳 Payments
+    </a>
+
+    <a href="admin-customers.html">
+        👥 Customers
+    </a>
+
+    <a href="admin-products.html">
+        💧 Products
+    </a>
+
+    <a href="admin-drivers.html">
+        🚚 Drivers
+    </a>
+
+    <a href="#" class="logout" onclick="logoutAdmin()">
+        🚪 Logout
+    </a>
+
+</div>
+
+
+<!-- ================= MAIN ================= -->
+
+<div class="main">
+
+
+    <!-- HEADER -->
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>Dashboard</h1>
+
+            <p class="welcome">
+                Welcome back, Administrator
+            </p>
+
+        </div>
+
+
+        <div class="admin-box">
+
+            <div class="avatar">
+                👤
+            </div>
+
+            <div>
+
+                <b>Admin</b>
+
+                <br>
+
+                <small>
+                    Ozone Amanzi
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= STATISTICS ================= -->
+
+    <div class="cards">
+
+
+        <div class="card">
+
+            <h3>
+                Total Orders
+            </h3>
+
+            <h1 id="ordersCount">
+                0
+            </h1>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3>
+                Pending Orders
+            </h3>
+
+            <h1 id="pendingCount">
+                0
+            </h1>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3>
+                Delivered
+            </h3>
+
+            <h1 id="deliveredCount">
+                0
+            </h1>
+
+        </div>
+
+
+        <div class="card">
+
+            <h3>
+                Revenue
+            </h3>
+
+            <h1 id="revenue">
+                R0.00
+            </h1>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- ================= RECENT ORDERS ================= -->
+
+    <div class="orders">
+
+        <h2>
+            Recent Orders
+        </h2>
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Order
+                        </th>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Total
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="ordersTable">
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="loading"
+                        >
+                            Loading orders...
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+
+/* =========================================
+   FIREBASE AUTHENTICATION
+========================================= */
+
+firebase.auth().onAuthStateChanged(function(user){
+
+    if(!user){
+
+        console.log("No authenticated user.");
+
+
+        return;
+    }
+
+    console.log(
+        "Admin Firebase UID:",
+        user.uid
+    );
+
+    loadOrders();
+
+});
+
+
+/* =========================================
+   LOAD ORDERS FROM FIREBASE
+========================================= */
+
+function loadOrders(){
+
+    const ordersRef =
+        firebase.database()
+        .ref("orders");
+
+
+    ordersRef.on("value", function(snapshot){
+
+        const data = snapshot.val();
+
+        console.log(
+            "🔥 Firebase orders:",
+            data
+        );
+
+
+        if(!data){
+
+            document.getElementById(
+                "ordersTable"
+            ).innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="empty"
+                    >
+                        No orders have been placed yet.
+                    </td>
+
+                </tr>
+
+            `;
+
+            updateDashboard([]);
+
+            return;
+        }
+
+
+        let orders = [];
+
+
+        /*
+            Your current database structure is:
+
+            orders
+                └── USER_UID
+                     └── ORDER_NUMBER
+
+        */
+
+        Object.keys(data).forEach(function(uid){
+
+            const userOrders =
+                data[uid];
+
+
+            if(!userOrders) return;
+
+
+            Object.keys(userOrders).forEach(function(orderId){
+
+                const order =
+                    userOrders[orderId];
+
+
+                if(order){
+
+                    order._userId = uid;
+
+                    orders.push(order);
+
+                }
+
+            });
+
+        });
+
+
+        console.log(
+            "📦 All orders:",
+            orders
+        );
+
+
+        /*
+            Sort newest first
+        */
+
+        orders.sort(function(a,b){
+
+            return new Date(
+                b.createdAt || 0
+            ) -
+            new Date(
+                a.createdAt || 0
+            );
+
+        });
+
+
+        updateDashboard(orders);
+
+        displayOrders(orders);
+
+    },
+
+    function(error){
+
+        console.error(
+            "❌ Firebase error:",
+            error
+        );
+
+        document.getElementById(
+            "ordersTable"
+        ).innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="empty"
+                >
+                    Could not load orders.
+                </td>
+
+            </tr>
+
+        `;
+
+    });
+
+}
+
+
+/* =========================================
+   UPDATE DASHBOARD STATISTICS
+========================================= */
+
+function updateDashboard(orders){
+
+    let pending = 0;
+
+    let delivered = 0;
+
+    let revenue = 0;
+
+
+    orders.forEach(function(order){
+
+        const status =
+            String(
+                order.status || ""
+            ).toLowerCase();
+
+
+        if(status === "pending"){
+
+            pending++;
+
+        }
+
+
+        if(status === "delivered"){
+
+            delivered++;
+
+        }
+
+
+        revenue +=
+            Number(order.total || 0);
+
+    });
+
+
+    document.getElementById(
+        "ordersCount"
+    ).innerText =
+        orders.length;
+
+
+    document.getElementById(
+        "pendingCount"
+    ).innerText =
+        pending;
+
+
+    document.getElementById(
+        "deliveredCount"
+    ).innerText =
+        delivered;
+
+
+    document.getElementById(
+        "revenue"
+    ).innerText =
+        "R" +
+        revenue.toFixed(2);
+
+}
+
+
+/* =========================================
+   DISPLAY ORDERS
+========================================= */
+
+function displayOrders(orders){
+
+    const table =
+        document.getElementById(
+            "ordersTable"
+        );
+
+
+    if(!orders.length){
+
+        table.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="empty"
+                >
+                    No orders found.
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+    }
+
+
+    /*
+        Only show the latest 10 orders
+    */
+
+    const recentOrders =
+        orders.slice(0,10);
+
+
+    table.innerHTML =
+        recentOrders.map(function(order){
+
+
+            const customer =
+                order.customer || {};
+
+
+            const firstName =
+                customer.firstName || "";
+
+
+            const lastName =
+                customer.lastName || "";
+
+
+            const customerName =
+                `${firstName} ${lastName}`.trim()
+                || "Unknown Customer";
+
+
+            const status =
+                order.status || "Pending";
+
+
+            const statusClass =
+                getStatusClass(status);
+
+
+            const total =
+                Number(order.total || 0);
+
+
+            const date =
+                formatDate(
+                    order.createdAt
+                );
+
+
+            return `
+
+                <tr>
+
+                    <td>
+
+                        <strong>
+                            ${escapeHTML(
+                                order.orderNumber ||
+                                "Unknown"
+                            )}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        ${escapeHTML(
+                            customerName
+                        )}
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+                            R${total.toFixed(2)}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        <span
+                            class="status ${statusClass}"
+                        >
+
+                            ${escapeHTML(status)}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        ${date}
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* =========================================
+   STATUS CLASS
+========================================= */
+
+function getStatusClass(status){
+
+    const value =
+        String(status)
+        .toLowerCase();
+
+
+    if(value === "delivered"){
+
+        return "delivered";
+
+    }
+
+
+    if(value === "processing"){
+
+        return "processing";
+
+    }
+
+
+    if(value === "cancelled"){
+
+        return "cancelled";
+
+    }
+
+
+    return "pending";
+
+}
+
+
+/* =========================================
+   FORMAT DATE
+========================================= */
+
+function formatDate(date){
+
+    if(!date){
+
+        return "Unknown";
+
+    }
+
+
+    const parsed =
+        new Date(date);
+
+
+    if(isNaN(parsed.getTime())){
+
+        return "Unknown";
+
+    }
+
+
+    return parsed.toLocaleDateString(
+        "en-ZA",
+        {
+            day:"2-digit",
+            month:"short",
+            year:"numeric"
+        }
+    );
+
+}
+
+
+/* =========================================
+   SECURITY
+========================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================
+   LOGOUT
+========================================= */
+
+function logoutAdmin(){
+
+    firebase.auth()
+    .signOut()
+    .then(function(){
+
+        window.location.href =
+            "login.html";
+
+    })
+    .catch(function(error){
+
+        console.error(
+            "Logout error:",
+            error
+        );
+
+    });
+
+}
+
+
+</script>
+
+</body>
+</html>
+```

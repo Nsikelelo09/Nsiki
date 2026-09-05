@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Products | Ozone Amanzi</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="firebase.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <style>
+       
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f0f7f4;
+            color: #1a2e2b;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ================================================================
+                   NAVBAR
+                ================================================================ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 2px 24px rgba(0, 0, 0, 0.06);
+            padding: 0 40px;
+            height: 74px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: box-shadow 0.3s;
+        }
+
+        .navbar.scrolled {
+            box-shadow: 0 4px 40px rgba(0, 0, 0, 0.10);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a6b6d;
+        }
+
+        .nav-logo i {
+            color: #00c853;
+            font-size: 28px;
+        }
+
+        .nav-logo span {
+            color: #0b3b3c;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1e293b;
+            transition: color 0.25s;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2.5px;
+            background: #00c853;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #00c853;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-cta {
+            background: #00c853;
+            color: #fff !important;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600 !important;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .nav-cta::after {
+            display: none !important;
+        }
+
+        .nav-cta:hover {
+            background: #00a844;
+            transform: scale(1.04);
+            color: #fff !important;
+        }
+
+        .nav-cta i {
+            margin-right: 6px;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 6px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 28px;
+            height: 3px;
+            background: #0b3b3c;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        /* ================================================================
+                   PAGE HEADER
+                ================================================================ */
+        .page-header {
+            padding: 100px 0 20px;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            color: #0b3b3c;
+        }
+
+        .page-header h1 i {
+            color: #00c853;
+        }
+
+        .page-header p {
+            color: #5a7a7b;
+            font-size: 17px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ================================================================
+                   PRODUCTS GRID (Clean - No Quantity Controls)
+                ================================================================ */
+        .products-section {
+            padding: 20px 0 60px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px 24px 28px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            transition: 0.3s;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .product-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+        }
+
+        /* ===== BOTTLE IMAGE ===== */
+        .bottle-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            height: 200px;
+            margin-bottom: 12px;
+            padding: 10px 0;
+        }
+
+        .bottle-container img {
+            height: 100%;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.10));
+            border-radius: 8px;
+        }
+
+        /* Different sizes */
+        .bottle-container .img-500ml {
+            height: 150px;
+        }
+
+        .bottle-container .img-1l {
+            height: 175px;
+        }
+
+        .bottle-container .img-5l {
+            height: 195px;
+        }
+
+        /* ===== Product Details ===== */
+        .product-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #0b3b3c;
+            margin-bottom: 4px;
+        }
+
+        .product-card .price {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a6b6d;
+            margin-bottom: 14px;
+        }
+
+        .product-card .price span {
+            font-size: 14px;
+            font-weight: 400;
+            color: #5a7a7b;
+        }
+
+        .product-card .description {
+            font-size: 14px;
+            color: #5a7a7b;
+            margin-bottom: 14px;
+        }
+
+        .product-card .btn-add {
+            padding: 12px 32px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #00c853, #00e676);
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .product-card .btn-add:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 200, 83, 0.30);
+        }
+
+        .product-card .btn-add:active {
+            transform: scale(0.97);
+        }
+
+        /* ================================================================
+                   FOOTER
+                ================================================================ */
+        .footer {
+            background: #0b1a1a;
+            color: rgba(255, 255, 255, 0.75);
+            padding: 40px 0 20px;
+            margin-top: 40px;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-brand h3 {
+            font-size: 20px;
+            color: #fff;
+        }
+
+        .footer-brand h3 i {
+            color: #00c853;
+        }
+
+        .footer-brand p {
+            font-size: 13px;
+            opacity: 0.6;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            transition: 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #00c853;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 13px;
+            opacity: 0.4;
+        }
+
+        /* ================================================================
+                   TOAST
+                ================================================================ */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0b3b3c;
+            color: #fff;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+            z-index: 9999;
+            font-size: 15px;
+            max-width: 90%;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast .toast-close {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            margin-left: auto;
+        }
+
+        /* ================================================================
+                   RESPONSIVE
+                ================================================================ */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 20px;
+            }
+            .nav-links {
+                position: fixed;
+                top: 74px;
+                left: 0;
+                width: 100%;
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(14px);
+                flex-direction: column;
+                padding: 30px 24px 40px;
+                gap: 18px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+                transform: translateY(-120%);
+                transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+                border-radius: 0 0 24px 24px;
+            }
+            .nav-links.open {
+                transform: translateY(0);
+            }
+            .nav-links a {
+                font-size: 17px;
+            }
+            .nav-cta {
+                align-self: center;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .hamburger.active span:nth-child(1) {
+                transform: rotate(45deg) translate(5px, 5px);
+            }
+            .hamburger.active span:nth-child(2) {
+                opacity: 0;
+            }
+            .hamburger.active span:nth-child(3) {
+                transform: rotate(-45deg) translate(5px, -5px);
+            }
+
+            .page-header h1 {
+                font-size: 28px;
+            }
+            .products-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 16px;
+            }
+            .bottle-container {
+                height: 160px;
+            }
+            .bottle-container .img-500ml {
+                height: 120px;
+            }
+            .bottle-container .img-1l {
+                height: 140px;
+            }
+            .bottle-container .img-5l {
+                height: 155px;
+            }
+            .product-card .price {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .products-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            .product-card {
+                padding: 20px 14px;
+            }
+            .bottle-container {
+                height: 130px;
+            }
+            .bottle-container .img-500ml {
+                height: 100px;
+            }
+            .bottle-container .img-1l {
+                height: 115px;
+            }
+            .bottle-container .img-5l {
+                height: 125px;
+            }
+            .product-card h3 {
+                font-size: 14px;
+            }
+            .product-card .price {
+                font-size: 16px;
+            }
+            .product-card .btn-add {
+                font-size: 12px;
+                padding: 8px 16px;
+            }
+            .product-card .description {
+                font-size: 12px;
+            }
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-logo">
+            <i class="fas fa-droplet"></i>
+            Ozone<span>Amanzi</span>
+        </div>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about-us.html">About</a></li>
+            <li><a href="product.html">Products</a></li>
+            <li><a href="cart.html"><i class="fas fa-shopping-cart"></i> Cart <span id="cartCount">(0)</span></a></li>
+            <li><a href="track-order.html"><i class="fas fa-truck"></i> Track</a></li>
+            <li><a href="payment.html" class="nav-cta"><i class="fas fa-lock"></i> Checkout</a></li>
+            <li id="authNav">
+                <a href="login.html" id="loginLink"><i class="fas fa-user"></i> Login</a>
+            </li>
+        </ul>
+
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </nav>
+    <section class="page-header">
+        <div class="container">
+            <h1><i class="fas fa-bottle-water"></i> Our Products</h1>
+            <p>Pure, refreshing water in a variety of sizes to suit your needs.</p>
+        </div>
+    </section>
+    <section class="products-section">
+        <div class="container">
+            <div class="products-grid" id="productsGrid">
+
+                <div class="product-card" data-id="1">
+                    <div class="bottle-container">
+                        <img src="500ml.jpeg" alt="500ml Ozone Amanzi Water" class="img-500ml" />
+                    </div>
+                    <h3>500ml Bottle</h3>
+                    <div class="price">R 10 <span>each</span></div>
+                    <p class="description">Perfect for on-the-go</p>
+                    <button class="btn-add" onclick="addToCart(1, '500ml Bottle', 10)">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+                <div class="product-card" data-id="2">
+                    <div class="bottle-container">
+                        <img src="1L.jpeg" alt="1L Ozone Amanzi Water" class="img-1l" />
+                    </div>
+                    <h3>1L Bottle</h3>
+                    <div class="price">R 15 <span>each</span></div>
+                    <p class="description">Ideal for daily hydration</p>
+                    <button class="btn-add" onclick="addToCart(2, '1L Bottle', 15)">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+                <div class="product-card" data-id="3">
+                    <div class="bottle-container">
+                        <img src="ozone-water-5l.jpg.jpeg" alt="5L Ozone Amanzi Water" class="img-5l" />
+                    </div>
+                    <h3>5L Bottle</h3>
+                    <div class="price">R 35 <span>each</span></div>
+                    <p class="description">Family size, great for home</p>
+                    <button class="btn-add" onclick="addToCart(3, '5L Bottle', 35)">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3><i class="fas fa-droplet"></i> Ozone Amanzi</h3>
+                    <p>Pure water, delivered to you.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="about-us.html">About</a>
+                    <a href="product.html">Products</a>
+                    <a href="track-order.html">Track Order</a>
+                    <a href="payment.html">Checkout</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 Ozone Amanzi. All rights reserved.
+            </div>
+        </div>
+    </footer>
+    <div class="toast" id="toast">
+        <span>✅</span>
+        <span id="toastMessage">Added to cart!</span>
+        <button class="toast-close" onclick="hideToast()">✕</button>
+    </div>
+
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+
+        hamburger.addEventListener('click', function() {
+            this.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('open');
+            });
+        });
+
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 20);
+        });
+        let currentUser = null;
+
+        function signInAnonymously() {
+            firebase.auth().signInAnonymously()
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    console.log(' Signed in anonymously. UID:', currentUser.uid);
+                    initCartListener();
+                    updateAuthUI();
+                })
+                .catch((error) => {
+                    console.warn('Anonymous auth failed, using guest fallback:', error);
+                    currentUser = { uid: 'guest_' + Date.now() };
+                    initCartListener();
+                    updateAuthUI();
+                });
+        }
+
+        function getCartRef() {
+            if (!currentUser) return null;
+            return firebase.database().ref('carts/' + currentUser.uid);
+        }
+
+        function initCartListener() {
+            const ref = getCartRef();
+            if (!ref) return;
+            ref.on('value', (snapshot) => {
+                const data = snapshot.val();
+                let cart = [];
+                if (data) {
+                    if (Array.isArray(data)) cart = data;
+                    else cart = Object.values(data);
+                }
+                const total = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+                const countEl = document.getElementById('cartCount');
+                if (countEl) countEl.textContent = `(${total})`;
+                window.currentCart = cart;
+            });
+        }
+        function addToCart(productId, name, price) {
+            if (!currentUser) {
+                alert('Please wait, we are setting up your session.');
+                return;
+            }
+            const ref = getCartRef();
+            if (!ref) return;
+
+            ref.once('value').then((snapshot) => {
+                let cart = snapshot.val() || [];
+                if (!Array.isArray(cart)) cart = Object.values(cart);
+                const existing = cart.find(item => item.id === productId);
+                if (existing) {
+                    existing.quantity += 1;
+                } else {
+                    cart.push({
+                        id: productId,
+                        name: name,
+                        price: price,
+                        quantity: 1,
+                        image: ''
+                    });
+                }
+                return ref.set(cart);
+            }).then(() => {
+                showToast(`${name} added to cart!`, '🛒');
+            }).catch((error) => {
+                console.error('Error adding to cart:', error);
+                alert('Could not add to cart. Please try again.');
+            });
+        }
+        function updateAuthUI() {
+            const authNav = document.getElementById('authNav');
+            if (!authNav) return;
+            const user = firebase.auth().currentUser;
+            if (user) {
+                authNav.innerHTML = `
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <span style="color:#00c853; font-size:14px;">
+                                    <i class="fas fa-user-circle"></i> Guest
+                                </span>
+                                <a href="#" onclick="logout(); return false;" style="color:#ff6b6b; font-size:13px;">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </div>
+                        `;
+            } else {
+                authNav.innerHTML = `<a href="login.html" id="loginLink"><i class="fas fa-user"></i> Login</a>`;
+            }
+        }
+
+        function logout() {
+            firebase.auth().signOut().then(() => {
+                alert(' Logged out successfully.');
+                window.location.reload();
+            }).catch((err) => {
+                console.warn('Logout error:', err);
+                alert('Logout failed. Please try again.');
+            });
+        }
+        let toastTimeout = null;
+
+        function showToast(message, icon = '✅') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = message;
+            toast.querySelector('span:first-child').textContent = icon;
+            toast.classList.add('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('show');
+            if (toastTimeout) clearTimeout(toastTimeout);
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (firebase.auth().currentUser) {
+                currentUser = firebase.auth().currentUser;
+                initCartListener();
+                updateAuthUI();
+            } else {
+                signInAnonymously();
+            }
+        });
+
+        console.log(' Product page loaded (clean version).');
+    </script>
+
+</body>
+</html>
